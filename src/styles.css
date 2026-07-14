@@ -1,0 +1,26 @@
+.square {
+    height: 40px;
+    width: 40px;
+    background-color: papayawhip;
+}
+
+.website {
+    background-color: bisque;
+}
+
+
+  
+.row1 {
+    display: flex;
+    justify-content: center;
+}
+
+.row2 {
+    display: flex;
+    justify-content: center;
+}
+
+.row3 {
+    display: flex;
+    justify-content: center;
+}
