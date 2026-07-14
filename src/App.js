@@ -18,7 +18,7 @@ import { useState } from 'react';
   }
  
   
-  function Board({xisNext, squares, onPlay}) {
+  function Board({xIsNext, squares, onPlay}) {
 
     function handleClick(i) {
     if (calculateWinner(squares) || squares[i]) {
@@ -46,26 +46,24 @@ import { useState } from 'react';
 
   return (
     <>
+    
+    <div className="status">{status}</div>
     <div>
-    <div className="status">{status}</div>
-
     <Square className ="board-row">Square value={squares[0]} on SquareClick={() => handleClick(0)} /</Square>
-    <div className ="board-row">Square value={squares[1]} on SquareClick={() => handleClick(1)} /</div>
-    <div className ="board-row">Square value={squares[2]} on SquareClick={() => handleClick(2)} /</div>
+    <Square className ="board-row">Square value={squares[1]} on SquareClick={() => handleClick(1)} /</Square>
+    <Square className ="board-row">Square value={squares[2]} on SquareClick={() => handleClick(2)} /</Square>
     </div>
      <div>
-    <div className="status">{status}</div>
-
-    <div className ="board-row">Square value={squares[3]} on SquareClick={() => handleClick(3)} /</div>
-    <div className ="board-row">Square value={squares[4]} on SquareClick={() => handleClick(4)} /</div>
-    <div className ="board-row">Square value={squares[5]} on SquareClick={() => handleClick(5)} /</div>
+    <Square className ="board-row">Square value={squares[3]} on SquareClick={() => handleClick(3)} /</Square>
+    <Square className ="board-row">Square value={squares[4]} on SquareClick={() => handleClick(4)} /</Square>
+    <Square className ="board-row">Square value={squares[5]} on SquareClick={() => handleClick(5)} /</Square>
     </div>
      <div>
-    <div className="status">{status}</div>
 
-    <div className ="board-row">Square value={squares[6]} on SquareClick={() => handleClick(6)} /</div>
-    <div className ="board-row">Square value={squares[7]} on SquareClick={() => handleClick(7)} /</div>
-    <div className ="board-row">Square value={squares[8]} on SquareClick={() => handleClick(8)} /</div>
+
+    <Square className ="board-row">Square value={squares[6]} on SquareClick={() => handleClick(6)} /</Square>
+    <Square className ="board-row">Square value={squares[7]} on SquareClick={() => handleClick(7)} /</Square>
+    <Square className ="board-row">Square value={squares[8]} on SquareClick={() => handleClick(8)} /</Square>
     </div>
     </>
   );
@@ -169,9 +167,8 @@ import { useState } from 'react';
   return (
 
     <>
-      <h1>Tic Tac Toe Starter</h1>
+      <h1>Alex's Games</h1>
       <div className = "gameContainer">
-      <span>title</span>
       <div className="game">
       <div className="game-info">
       </div>
@@ -180,7 +177,7 @@ import { useState } from 'react';
       </div>
       </div>
 
-      <p>Edit App.js to build your game.</p>
+
     </>
   );
   }
