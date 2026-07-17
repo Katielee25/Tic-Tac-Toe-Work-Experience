@@ -1,15 +1,16 @@
 import React from 'react';
 import { useState } from 'react';
+import confetti from 'canvas-confetti';
 
 
   function Square({id, value, onSquareClick}) {
 
     let content;
     if (value === "x") {
-      content = <span className="squareItem">"x"</span> 
+      content = <span className="squareItem">🥨</span> 
     }
     else if (value === "o") {
-      content = <span className="squareItem">"o"</span>
+      content = <span className="squareItem">🍩</span>
     }
     return (
       <button id = {id} className="square" onClick={onSquareClick}>{content}
@@ -38,10 +39,11 @@ import { useState } from 'react';
   const winner = calculateWinner(squares);
   let status;
   if (winner) {
-    status = 'Winner: ' + winner;
-
+    status = 'Winner: ' + (winner === 'x' ? 'Player 1' : 'Player 2');
+  } else if (squares.every(square => square !== null)) {
+    status = "It's a draw!";
   } else {
-    status = 'Next player: ' + (xIsNext ? 'x' : 'o')
+    status = 'Next player: ' + (xIsNext ? 'Player 1' : 'Player 2')
   }
 
   return (
@@ -51,21 +53,21 @@ import { useState } from 'react';
     
     
     <div className="row1">
-    <Square className ="board-row">Square value={squares[0]} on SquareClick={() => handleClick(0)} /</Square>
-    <Square className ="board-row">Square value={squares[1]} on SquareClick={() => handleClick(1)} /</Square>
-    <Square className ="board-row">Square value={squares[2]} on SquareClick={() => handleClick(2)} /</Square>
+    <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
+    <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
+    <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
     </div>
      <div className="row2">
-    <Square className ="board-row">Square value={squares[3]} on SquareClick={() => handleClick(3)} /</Square>
-    <Square className ="board-row">Square value={squares[4]} on SquareClick={() => handleClick(4)} /</Square>
-    <Square className ="board-row">Square value={squares[5]} on SquareClick={() => handleClick(5)} /</Square>
+    <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
+    <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
+    <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
     </div>
      <div className="row3">
 
 
-    <Square className ="board-row">Square value={squares[6]} on SquareClick={() => handleClick(6)} /</Square>
-    <Square className ="board-row">Square value={squares[7]} on SquareClick={() => handleClick(7)} /</Square>
-    <Square className ="board-row">Square value={squares[8]} on SquareClick={() => handleClick(8)} /</Square>
+    <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
+    <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
+    <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
     </div>
     </div>
     </>
@@ -96,13 +98,60 @@ import { useState } from 'react';
     export default  function game() {
   const[history, setHistory] = useState([Array(9).fill(null)]);
    const[currentMove, setCurrentMove] = useState(0);
-   const xIsNext = currentMove % 2 === 0;
+   const[scores, setScores] = useState({ x: 0, o: 0 });
+   const[xGoesFirst, setXGoesFirst] = useState(true);
+   const xIsNext = xGoesFirst ? (currentMove % 2 === 0) : (currentMove % 2 !== 0);
    const currentSquares = history[currentMove];
+
+      function openPublicPage(pageName) {
+        const basePath = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+        window.location.assign(`${basePath}/${pageName}`);
+      }
+
+  function handleNewGame() {
+    setHistory([Array(9).fill(null)]);
+    setCurrentMove(0);
+    setXGoesFirst(prev => !prev);
+  }
 
   function handlePlay(nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares]
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length - 1);
+    const winner = calculateWinner(nextSquares);
+    if (winner) {
+      setScores(prev => ({ ...prev, [winner]: prev[winner] + 1 }));
+      const sprinkle = confetti.shapeFromPath({ path: 'M-8,-2 L8,-2 L8,2 L-8,2 Z' });
+      const emoji = winner === 'x' ? '🥨' : '🍩';
+      const emojiShape = confetti.shapeFromText({ text: emoji, scalar: 400 });
+      
+      confetti({
+        particleCount: 300,
+        spread: 160,
+        origin: { y: 0.4 },
+        shapes: [sprinkle, emojiShape],
+        colors: ['#e87dd8', '#a78bfa', '#6ee7b7', '#f472b6', '#818cf8', '#fb923c'],
+        scalar: 3.5,
+        startVelocity: 55,
+        ticks: 200,
+      });
+      setTimeout(() => confetti({
+        particleCount: 150,
+        spread: 120,
+        origin: { x: 0.1, y: 0.6 },
+        shapes: [sprinkle, emojiShape],
+        colors: ['#e87dd8', '#a78bfa', '#6ee7b7', '#f472b6', '#818cf8', '#fb923c'],
+        scalar: 3,
+      }), 200);
+      setTimeout(() => confetti({
+        particleCount: 150,
+        spread: 120,
+        origin: { x: 0.9, y: 0.6 },
+        shapes: [sprinkle, emojiShape],
+        colors: ['#e87dd8', '#a78bfa', '#6ee7b7', '#f472b6', '#818cf8', '#fb923c'],
+        scalar: 3,
+      }), 200);
+    }
   }
 
   function jumpTo(nextMove) {
@@ -170,17 +219,48 @@ import { useState } from 'react';
   return (
 
     <div className="website">
-      <h1>Alex's Games</h1>
-      <div className = "gameContainer">
+      <h1>
+        <span className="wave-letter" style={{animationDelay: '-0.2s'}}>🍦</span>
+        <span className="wave-letter" style={{animationDelay: '-0.1s'}}>🍦</span>
+        {' '}
+        <span className="wave-letter" style={{animationDelay: '0s'}}>A</span>
+        <span className="wave-letter" style={{animationDelay: '0.1s'}}>l</span>
+        <span className="wave-letter" style={{animationDelay: '0.2s'}}>e</span>
+        <span className="wave-letter" style={{animationDelay: '0.3s'}}>x</span>
+        <span className="wave-letter" style={{animationDelay: '0.4s'}}>{'\'s'}</span>
+        {' '}
+        <span className="wave-letter" style={{animationDelay: '0.6s'}}>G</span>
+        <span className="wave-letter" style={{animationDelay: '0.7s'}}>a</span>
+        <span className="wave-letter" style={{animationDelay: '0.8s'}}>m</span>
+        <span className="wave-letter" style={{animationDelay: '0.9s'}}>e</span>
+        <span className="wave-letter" style={{animationDelay: '1s'}}>s</span>
+        {' '}
+        <span className="wave-letter" style={{animationDelay: '1.1s'}}>🍦</span>
+        <span className="wave-letter" style={{animationDelay: '1.2s'}}>🍦</span>
+      </h1>
+      <button className="wordle-btn" onClick={() => openPublicPage('wordle.html')}>WORDLE</button>
+      <button className="sudoku-btn" onClick={() => openPublicPage('sudoku.html')}>SUDOKU</button>
+      <div className="gameContainer">
+      <div className="score-panel">
+        <div className="score-label">Player 1</div>
+        <div className="score-label">🥨</div>
+        <div className="score-number">{scores.x}</div>
+      </div>
       <div className="game">
       <div className="game-info">
       </div>
       <div className="game-board"></div>
       <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+      <button className="new-game" onClick={handleNewGame}>New Game</button>
+      </div>
+      <div className="score-panel">
+        <div className="score-label">Player 2</div>
+        <div className="score-label">🍩</div>
+        <div className="score-number">{scores.o}</div>
       </div>
       </div>
 
 
     </div>
-  );
+    );
   }

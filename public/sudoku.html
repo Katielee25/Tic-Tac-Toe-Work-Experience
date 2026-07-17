@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chewy&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #fef5c9;
+            font-family: 'Chewy', cursive;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 12px 30px;
+            min-height: 100vh;
+            box-sizing: border-box;
+            gap: 10px;
+        }
+
+        h1 {
+            font-size: clamp(56px, 8vw, 96px);
+            margin: 0 0 6px 0;
+            color: #2a7a4a;
+            text-align: center;
+            line-height: 0.95;
+        }
+
+        @keyframes titleWave {
+            0%   { transform: translateY(0) rotateZ(-1deg); }
+            25%  { transform: translateY(-8px) rotateZ(1.5deg); }
+            50%  { transform: translateY(0) rotateZ(-1deg); }
+            75%  { transform: translateY(-8px) rotateZ(1.5deg); }
+            100% { transform: translateY(0) rotateZ(-1deg); }
+        }
+
+        .wave-letter {
+            display: inline-block;
+            animation: titleWave 2.5s ease-in-out infinite;
+        }
+
+        .back-btn {
+            padding: 8px 16px;
+            background-color: #b8f5c9;
+            color: #2a7a4a;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: 'Chewy', cursive;
+            align-self: flex-start;
+        }
+
+        .back-btn:hover {
+            background-color: #7de8a0;
+        }
+
+        .sudoku-board {
+            border-collapse: collapse;
+            border: 3px solid #2a7a4a;
+        }
+
+        .sudoku-board td {
+            width: 54px;
+            height: 54px;
+            border: 1px solid #9ca3af;
+            padding: 0;
+            text-align: center;
+            vertical-align: middle;
+            position: relative;
+        }
+
+        /* Thick borders between 3x3 boxes */
+        .sudoku-board td:nth-child(3n) {
+            border-right: 3px solid #2a7a4a;
+        }
+        .sudoku-board td:nth-child(3n+1) {
+            border-left: 3px solid #2a7a4a;
+        }
+        .sudoku-board tr:nth-child(3n) td {
+            border-bottom: 3px solid #2a7a4a;
+        }
+        .sudoku-board tr:nth-child(3n+1) td {
+            border-top: 3px solid #2a7a4a;
+        }
+
+        .sudoku-board input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-size: 28px;
+            font-family: 'Chewy', cursive;
+            color: #2d5aa3;
+            outline: none;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .sudoku-board input:focus {
+            outline: none;
+        }
+
+        /* Selection highlight layers — applied via JS */
+        .sudoku-board input.hl-region {
+            background-color: #c8edda;
+        }
+
+        .sudoku-board input.hl-same {
+            background-color: #a3d9bb;
+        }
+
+        .sudoku-board input.hl-selected {
+            background-color: #5ecf90 !important;
+        }
+
+        .sudoku-board input.given {
+            color: #2a7a4a;
+            font-weight: bold;
+            background-color: #e8f8ee;
+        }
+
+        .sudoku-board input.given.hl-region {
+            background-color: #b8e8cc;
+        }
+
+        .sudoku-board input.given.hl-same {
+            background-color: #8dd4ab;
+        }
+
+        .sudoku-board input.given.hl-selected {
+            background-color: #5ecf90 !important;
+        }
+
+        .sudoku-board input.error {
+            color: #ef4444;
+            background-color: #fee2e2;
+        }
+
+        .sudoku-board input.error.hl-region {
+            background-color: #fbc8c8;
+        }
+
+        .sudoku-board input.error.hl-selected {
+            background-color: #f87171 !important;
+        }
+
+        .sudoku-board input.correct {
+            color: #10b981;
+        }
+
+        .notes-container {
+            position: absolute;
+            inset: 2px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 1px;
+            pointer-events: none;
+        }
+
+        .candidate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #7c3aed;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 12px 28px;
+            background-color: #b8f5c9;
+            color: #2a7a4a;
+            border: none;
+            border-radius: 10px;
+            font-size: 22px;
+            font-family: 'Chewy', cursive;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: #7de8a0;
+        }
+
+        .action-btn.hint-btn {
+            background-color: #fde68a;
+            color: #92400e;
+        }
+
+        .action-btn.hint-btn:hover {
+            background-color: #fbbf24;
+        }
+
+        .difficulty-btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .diff-btn {
+            padding: 10px 24px;
+            border: 3px solid transparent;
+            border-radius: 10px;
+            font-size: 20px;
+            font-family: 'Chewy', cursive;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.15s;
+        }
+
+        .diff-btn.easy   { background-color: #b8f5c9; color: #2a7a4a; }
+        .diff-btn.medium { background-color: #fde68a; color: #92400e; }
+        .diff-btn.hard   { background-color: #fecaca; color: #991b1b; }
+
+        .diff-btn.easy:hover   { background-color: #7de8a0; }
+        .diff-btn.medium:hover { background-color: #fbbf24; }
+        .diff-btn.hard:hover   { background-color: #f87171; }
+
+        .diff-btn.active {
+            border-color: #374151;
+            transform: scale(1.07);
+        }
+
+        .daily-btn {
+            padding: 10px 24px;
+            border: 3px solid #7c3aed;
+            border-radius: 10px;
+            font-size: 20px;
+            font-family: 'Chewy', cursive;
+            cursor: pointer;
+            background-color: #ede9fe;
+            color: #6d28d9;
+            transition: background-color 0.2s, transform 0.15s;
+        }
+
+        .daily-btn:hover {
+            background-color: #ddd6fe;
+        }
+
+        .daily-btn.active {
+            border-color: #374151;
+            transform: scale(1.07);
+            background-color: #c4b5fd;
+        }
+
+        .timer {
+            font-size: 28px;
+            color: #374151;
+            letter-spacing: 2px;
+            min-height: 36px;
+        }
+
+        .timer.daily {
+            color: #6d28d9;
+            font-size: 32px;
+        }
+
+        .message {
+            font-size: 24px;
+            color: #2a7a4a;
+            min-height: 30px;
+            text-align: center;
+        }
+
+        .completion-dropdown {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translate(-50%, -120%);
+            background: #fff;
+            border: 3px solid #ef4444;
+            color: #991b1b;
+            border-radius: 14px;
+            padding: 12px 18px;
+            font-size: 20px;
+            font-family: 'Chewy', cursive;
+            z-index: 300;
+            opacity: 0;
+            transition: transform 0.28s ease, opacity 0.28s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .completion-dropdown.open {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(9, 50px);
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .numpad-btn {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #2a7a4a;
+            border-radius: 10px;
+            background-color: #e8f8ee;
+            color: #2a7a4a;
+            font-family: 'Chewy', cursive;
+            font-size: 24px;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        .numpad-btn:hover {
+            background-color: #b8f5c9;
+        }
+
+        .numpad-btn.completed {
+            background-color: #d1d5db;
+            color: #9ca3af;
+            border-color: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .toggle-notes {
+            padding: 10px 20px;
+            background-color: #e0e7ff;
+            color: #4c1d95;
+            border: 2px solid #7c3aed;
+            border-radius: 10px;
+            font-size: 18px;
+            font-family: 'Chewy', cursive;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .toggle-notes:hover {
+            background-color: #c4b5fd;
+        }
+
+        .toggle-notes.active {
+            background-color: #7c3aed;
+            color: #fef5c9;
+        }
+
+        /* Leaderboard sidebar */
+        .game-lb-wrapper {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lb-sidebar {
+            width: 260px;
+            flex-shrink: 0;
+            background: #fef5c9;
+            border: 3px solid #2a7a4a;
+            border-radius: 16px;
+            padding: 16px 18px;
+            font-family: 'Chewy', cursive;
+            position: sticky;
+            top: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .lb-title {
+            font-size: 24px;
+            color: #2a7a4a;
+            text-align: center;
+            margin: 0 0 12px;
+        }
+
+        .lb-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+        }
+
+        .lb-table th {
+            color: #6b7280;
+            font-size: 13px;
+            padding: 4px 6px;
+            text-align: left;
+            border-bottom: 2px solid #d1d5db;
+        }
+
+        .lb-table td {
+            padding: 5px 6px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        .lb-table tr:first-child td { color: #f59e0b; }
+        .lb-table tr:nth-child(2) td { color: #9ca3af; }
+        .lb-table tr:nth-child(3) td { color: #b45309; }
+
+        .lb-empty {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 15px;
+            padding: 12px 0;
+        }
+
+        /* Name prompt overlay */
+        .name-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .name-overlay.open {
+            display: flex;
+        }
+
+        .name-panel {
+            background: #fef5c9;
+            border: 4px solid #2a7a4a;
+            border-radius: 20px;
+            padding: 28px 32px;
+            text-align: center;
+            font-family: 'Chewy', cursive;
+            min-width: 280px;
+        }
+
+        .name-panel h2 {
+            font-size: 26px;
+            color: #2a7a4a;
+            margin: 0 0 8px;
+        }
+
+        .name-panel p {
+            font-size: 18px;
+            color: #6b7280;
+            margin: 0 0 14px;
+        }
+
+        .name-spinner {
+            width: 100%;
+            min-height: 52px;
+            padding: 10px 12px;
+            font-size: 28px;
+            font-family: 'Chewy', cursive;
+            color: #2a7a4a;
+            border: 2px dashed #2a7a4a;
+            border-radius: 12px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            text-align: center;
+            background: #fff8de;
+        }
+
+        .name-meta {
+            min-height: 24px;
+            margin: 0 0 14px;
+            font-size: 17px;
+            color: #6b7280;
+        }
+
+        .name-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .name-spin {
+            padding: 10px 20px;
+            background-color: #e0e7ff;
+            color: #4c1d95;
+            border: 2px solid #7c3aed;
+            border-radius: 10px;
+            font-size: 18px;
+            font-family: 'Chewy', cursive;
+            cursor: pointer;
+        }
+
+        .name-spin:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .name-submit {
+            padding: 10px 28px;
+            background-color: #b8f5c9;
+            color: #2a7a4a;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            font-family: 'Chewy', cursive;
+            cursor: pointer;
+        }
+
+        .name-submit:hover { background-color: #7de8a0; }
+
+        @media (max-width: 900px) {
+            .game-lb-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .lb-sidebar {
+                width: 100%;
+                max-width: 486px;
+                position: static;
+                box-sizing: border-box;
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .sudoku-board td {
+                width: 36px;
+                height: 36px;
+            }
+
+            .sudoku-board input {
+                font-size: 20px;
+            }
+
+            .numpad {
+                grid-template-columns: repeat(9, 34px);
+                gap: 4px;
+            }
+
+            .numpad-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 18px;
+            }
+
+            h1 {
+                font-size: clamp(42px, 12vw, 72px);
+            }
+
+            .candidate {
+                font-size: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-btn" onclick="window.location.href = '/'">← Back to Tic Tac Toe</button>
+
+        <h1>
+            <span class="wave-letter" style="animation-delay: -0.2s">🍦</span>
+            <span class="wave-letter" style="animation-delay: -0.1s">🍦</span>
+            &nbsp;
+            <span class="wave-letter" style="animation-delay: 0s">S</span>
+            <span class="wave-letter" style="animation-delay: 0.1s">u</span>
+            <span class="wave-letter" style="animation-delay: 0.2s">d</span>
+            <span class="wave-letter" style="animation-delay: 0.3s">o</span>
+            <span class="wave-letter" style="animation-delay: 0.4s">k</span>
+            <span class="wave-letter" style="animation-delay: 0.5s">u</span>
+            &nbsp;
+            <span class="wave-letter" style="animation-delay: 0.7s">🍦</span>
+            <span class="wave-letter" style="animation-delay: 0.8s">🍦</span>
+        </h1>
+
+        <div class="difficulty-btns">
+            <button class="diff-btn easy active" id="btn-easy" onclick="setDifficulty('easy', this)">Easy</button>
+            <button class="diff-btn medium" id="btn-medium" onclick="setDifficulty('medium', this)">Medium</button>
+            <button class="diff-btn hard" id="btn-hard" onclick="setDifficulty('hard', this)">Hard</button>
+            <button class="daily-btn" id="btn-daily" onclick="startDailyChallenge(this)">⭐ Daily Challenge</button>
+        </div>
+
+        <div class="game-lb-wrapper">
+            <div class="game-area">
+                <div class="timer" id="timer"></div>
+
+                <table class="sudoku-board" id="sudokuBoard"></table>
+
+                <div class="numpad" id="numpad"></div>
+
+                <div class="controls">
+                    <button class="action-btn" onclick="checkBoard()">Check</button>
+                    <button class="action-btn hint-btn" onclick="giveHint()">Hint</button>
+                    <button class="action-btn" id="resetBtn" style="display:none;" onclick="resetDaily()">🔄 Reset</button>
+                    <button class="action-btn" id="newGameBtn" onclick="newGame()">New Game</button>
+                </div>
+
+                <div class="message" id="message"></div>
+            </div>
+
+            <div class="lb-sidebar">
+                <div class="lb-title">🏆 Daily Leaderboard</div>
+                <div id="lbSidebarContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="completion-dropdown" id="completionDropdown"></div>
+
+    <!-- Name entry overlay -->
+    <div class="name-overlay" id="nameOverlay">
+        <div class="name-panel">
+            <h2>🎉 Puzzle Solved!</h2>
+            <p id="namePromptTime"></p>
+            <div class="name-spinner" id="nameSpinner">Press Spin to generate your name!</div>
+            <p class="name-meta" id="nameSpinnerMeta">3 spins left</p>
+            <div class="name-actions">
+                <button class="name-spin" id="spinNameBtn" onclick="spinName()">🎰 Spin Name</button>
+                <button class="name-submit" onclick="submitScore()">Save Score</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script>
+        // ── Puzzle Generator ──────────────────────────────────────────────────
+        function generateCompletedGrid() {
+            const grid = Array(9).fill(null).map(() => Array(9).fill(0));
+            const fillGrid = (g) => {
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        if (g[r][c] === 0) {
+                            const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+                            for (let num of nums) {
+                                if (isValidPlacement(g, r, c, num)) {
+                                    g[r][c] = num;
+                                    if (fillGrid(g)) return true;
+                                    g[r][c] = 0;
+                                }
+                            }
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            };
+            fillGrid(grid);
+            return grid;
+        }
+
+        function isValidPlacement(grid, r, c, num) {
+            for (let i = 0; i < 9; i++) {
+                if (grid[r][i] === num || grid[i][c] === num) return false;
+            }
+            const boxR = Math.floor(r / 3) * 3;
+            const boxC = Math.floor(c / 3) * 3;
+            for (let i = boxR; i < boxR + 3; i++) {
+                for (let j = boxC; j < boxC + 3; j++) {
+                    if (grid[i][j] === num) return false;
+                }
+            }
+            return true;
+        }
+
+        function generatePuzzle(difficulty) {
+            const completed = generateCompletedGrid();
+            const puzzle = completed.map(r => [...r]);
+            let cellsToRemove;
+            if (difficulty === 'easy') cellsToRemove = 30 + Math.floor(Math.random() * 10);
+            else if (difficulty === 'medium') cellsToRemove = 45 + Math.floor(Math.random() * 10);
+            else cellsToRemove = 55 + Math.floor(Math.random() * 10);
+
+            let removed = 0;
+            while (removed < cellsToRemove) {
+                const r = Math.floor(Math.random() * 9);
+                const c = Math.floor(Math.random() * 9);
+                if (puzzle[r][c] === 0) continue;
+                puzzle[r][c] = 0;
+                removed++;
+            }
+            return { puzzle, solution: completed };
+        }
+
+        // Fallback: pre-made puzzles for daily challenges
+        const DAILY_POOL = [
+            {
+                puzzle: [[5,3,0, 0,7,0, 0,0,0], [6,0,0, 1,9,5, 0,0,0], [0,9,8, 0,0,0, 0,6,0], [8,0,0, 0,6,0, 0,0,3], [4,0,0, 8,0,3, 0,0,1], [7,0,0, 0,2,0, 0,0,6], [0,6,0, 0,0,0, 2,8,0], [0,0,0, 4,1,9, 0,0,5], [0,0,0, 0,8,0, 0,7,9]],
+                solution: [[5,3,4, 6,7,8, 9,1,2], [6,7,2, 1,9,5, 3,4,8], [1,9,8, 3,4,2, 5,6,7], [8,5,9, 7,6,1, 4,2,3], [4,2,6, 8,5,3, 7,9,1], [7,1,3, 9,2,4, 8,5,6], [9,6,1, 5,3,7, 2,8,4], [2,8,7, 4,1,9, 6,3,5], [3,4,5, 2,8,6, 1,7,9]]
+            },
+            {
+                puzzle: [[0,0,0, 2,6,0, 7,0,1], [6,8,0, 0,7,0, 0,9,0], [1,9,0, 0,0,4, 5,0,0], [8,2,0, 1,0,0, 0,4,0], [0,0,4, 6,0,2, 9,0,0], [0,5,0, 0,0,3, 0,2,8], [0,0,9, 3,0,0, 0,7,4], [0,4,0, 0,5,0, 0,3,6], [7,0,3, 0,1,8, 0,0,0]],
+                solution: [[4,3,5, 2,6,9, 7,8,1], [6,8,2, 5,7,1, 4,9,3], [1,9,7, 8,3,4, 5,6,2], [8,2,6, 1,9,5, 3,4,7], [3,7,4, 6,8,2, 9,1,5], [9,5,1, 7,4,3, 6,2,8], [5,1,9, 3,2,6, 8,7,4], [2,4,8, 9,5,7, 1,3,6], [7,6,3, 4,1,8, 2,5,9]]
+            },
+            {
+                puzzle: [[0,2,0, 6,0,8, 0,0,0], [5,8,0, 0,0,9, 7,0,0], [0,0,0, 0,4,0, 0,0,0], [3,7,0, 0,0,0, 5,0,0], [6,0,0, 0,0,0, 0,0,4], [0,0,8, 0,0,0, 0,1,3], [0,0,0, 0,2,0, 0,0,0], [0,0,9, 8,0,0, 0,3,6], [0,0,0, 3,0,6, 0,9,0]],
+                solution: [[1,2,3, 6,7,8, 9,4,5], [5,8,4, 2,3,9, 7,6,1], [9,6,7, 1,4,5, 3,2,8], [3,7,2, 4,6,1, 5,8,9], [6,9,1, 5,8,3, 2,7,4], [4,5,8, 7,9,2, 6,1,3], [8,3,6, 9,2,4, 1,5,7], [2,1,9, 8,5,7, 4,3,6], [7,4,5, 3,1,6, 8,9,2]]
+            }
+        ];
+
+        let currentDifficulty = 'easy';
+        let currentPuzzle = null;
+        let selectedCell = null;
+        let timerInterval = null;
+        let elapsedSeconds = 0;
+        let isDailyMode = false;
+        let isDailyReplay = false;
+        let hintUsed = false;
+        let pendingScore = null;
+        let pendingSpinnerName = '';
+        let spinnerTriesLeft = 0;
+        let notesMode = false;
+        let cellCandidates = {};
+        let initialPuzzleState = null;
+        let hasWonPuzzle = false;
+        let hasShownIncorrectDropdown = false;
+        let dropdownTimeout = null;
+
+        const SPINNER_ADJECTIVES = [
+            'Swanky', 'Jolly', 'Bouncy', 'Zesty', 'Nifty', 'Brave', 'Snazzy', 'Sunny',
+            'Cheery', 'Clever', 'Dizzy', 'Merry', 'Witty', 'Lucky', 'Peppy', 'Sparkly'
+        ];
+        const SPINNER_ANIMALS = [
+            'Koala', 'Kangaroo', 'Otter', 'Panda', 'Falcon', 'Llama', 'Penguin', 'Tiger',
+            'Dolphin', 'Corgi', 'Lynx', 'Gecko', 'Fox', 'Walrus', 'Sloth', 'Rabbit'
+        ];
+
+        // ── Timer ────────────────────────────────────────────────────────────
+        function startTimer() {
+            stopTimer();
+            elapsedSeconds = 0;
+            renderTimer();
+            timerInterval = setInterval(() => {
+                elapsedSeconds++;
+                renderTimer();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function renderTimer() {
+            const el = document.getElementById('timer');
+            const m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+            const s = String(elapsedSeconds % 60).padStart(2, '0');
+            el.textContent = `⏱ ${m}:${s}`;
+            el.className = 'timer' + (isDailyMode ? ' daily' : '');
+        }
+
+        // ── Daily challenge ───────────────────────────────────────────────────
+        function getTodayKey() {
+            const d = new Date();
+            return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+        }
+
+        function getDailyStatus() {
+            const key = 'sudoku_daily_status';
+            try { return JSON.parse(localStorage.getItem(key)) || { date: null, completed: false }; }
+            catch { return { date: null, completed: false }; }
+        }
+
+        function setDailyStatus(completed) {
+            const key = 'sudoku_daily_status';
+            localStorage.setItem(key, JSON.stringify({ date: getTodayKey(), completed }));
+        }
+
+        function isDailyCompletedToday() {
+            const status = getDailyStatus();
+            return status.date === getTodayKey() && status.completed;
+        }
+
+        function getDailyPuzzle() {
+            // One-day easer daily challenge override for 2026-07-16.
+            if (getTodayKey() === '2026-7-16') {
+                return DAILY_POOL[0];
+            }
+            const seed = getTodayKey().split('-').reduce((acc, n) => acc + parseInt(n), 0);
+            return DAILY_POOL[seed % DAILY_POOL.length];
+        }
+
+        function startDailyChallenge(btn) {
+            isDailyMode = true;
+            isDailyReplay = isDailyCompletedToday();
+            hintUsed = false;
+            notesMode = false;
+            cellCandidates = {};
+            hasWonPuzzle = false;
+            hasShownIncorrectDropdown = false;
+            document.getElementById('resetBtn').style.display = 'inline-block';
+            document.getElementById('newGameBtn').style.display = 'none';
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.daily-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (isDailyReplay) {
+                btn.textContent = '🔁 Replaying Today\'s Challenge';
+            } else {
+                btn.textContent = '⭐ Daily Challenge';
+            }
+            currentPuzzle = getDailyPuzzle();
+            initialPuzzleState = currentPuzzle.puzzle.map(r => [...r]);
+            selectedCell = null;
+            document.getElementById('message').textContent = '';
+            buildBoard();
+            buildNumpad();
+            startTimer();
+        }
+
+        function resetDaily() {
+            if (isDailyMode && currentPuzzle) {
+                document.getElementById('nameOverlay').classList.remove('open');
+                pendingScore = null;
+                cellCandidates = {};
+                notesMode = false;
+                hasWonPuzzle = false;
+                hasShownIncorrectDropdown = false;
+                initialPuzzleState = currentPuzzle.puzzle.map(r => [...r]);
+                buildBoard();
+                startTimer();
+                document.getElementById('message').textContent = '';
+            }
+        }
+
+        // ── Difficulty / new game ─────────────────────────────────────────────
+        function setDifficulty(level, btn) {
+            isDailyMode = false;
+            isDailyReplay = false;
+            hintUsed = false;
+            notesMode = false;
+            cellCandidates = {};
+            hasWonPuzzle = false;
+            hasShownIncorrectDropdown = false;
+            document.getElementById('resetBtn').style.display = 'none';
+            document.getElementById('newGameBtn').style.display = 'inline-block';
+            currentDifficulty = level;
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.daily-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            newGame();
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.sudoku-board input').forEach(inp => {
+                inp.classList.remove('hl-region', 'hl-same', 'hl-selected');
+            });
+        }
+
+        function selectCell(input) {
+            clearHighlights();
+            selectedCell = input;
+            const r = parseInt(input.dataset.row);
+            const c = parseInt(input.dataset.col);
+            const boxR = Math.floor(r / 3) * 3;
+            const boxC = Math.floor(c / 3) * 3;
+            const val = input.value.trim();
+
+            document.querySelectorAll('.sudoku-board input').forEach(inp => {
+                const ir = parseInt(inp.dataset.row);
+                const ic = parseInt(inp.dataset.col);
+                const sameRow = ir === r;
+                const sameCol = ic === c;
+                const sameBox = ir >= boxR && ir < boxR + 3 && ic >= boxC && ic < boxC + 3;
+
+                if (sameRow || sameCol || sameBox) {
+                    inp.classList.add('hl-region');
+                }
+                if (val && inp.value.trim() === val) {
+                    inp.classList.add('hl-same');
+                }
+            });
+
+            input.classList.add('hl-selected');
+        }
+
+        function newGame() {
+            isDailyMode = false;
+            isDailyReplay = false;
+            hintUsed = false;
+            notesMode = false;
+            cellCandidates = {};
+            hasWonPuzzle = false;
+            hasShownIncorrectDropdown = false;
+            document.getElementById('resetBtn').style.display = 'none';
+            document.getElementById('newGameBtn').style.display = 'inline-block';
+            currentPuzzle = generatePuzzle(currentDifficulty);
+            initialPuzzleState = currentPuzzle.puzzle.map(r => [...r]);
+            selectedCell = null;
+            document.getElementById('message').textContent = '';
+            buildBoard();
+            buildNumpad();
+            startTimer();
+        }
+
+        function buildBoard() {
+            const board = document.getElementById('sudokuBoard');
+            board.innerHTML = '';
+            for (let r = 0; r < 9; r++) {
+                const tr = document.createElement('tr');
+                for (let c = 0; c < 9; c++) {
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.dataset.row = r;
+                    input.dataset.col = c;
+
+                    const given = initialPuzzleState[r][c];
+                    if (given !== 0) {
+                        input.value = given;
+                        input.classList.add('given');
+                        input.readOnly = true;
+                        input.addEventListener('focus', () => selectCell(input));
+                        input.addEventListener('keydown', (e) => handleKeydown(e, r, c));
+                        input.addEventListener('click', () => selectCell(input));
+                    } else {
+                        input.addEventListener('focus', () => selectCell(input));
+                        input.addEventListener('input', (e) => handleInput(e, input, r, c));
+                        input.addEventListener('keydown', (e) => handleKeydown(e, r, c));
+                        input.addEventListener('click', () => {
+                            selectCell(input);
+                            if (notesMode) openNotes(r, c);
+                        });
+                    }
+
+                    td.appendChild(input);
+
+                    // Create empty candidates container for all cells (visible by default)
+                    const notesContainer = document.createElement('div');
+                    notesContainer.className = 'notes-container';
+                    notesContainer.style.display = 'grid';
+                    for (let i = 1; i <= 9; i++) {
+                        const note = document.createElement('div');
+                        note.className = 'candidate';
+                        notesContainer.appendChild(note);
+                    }
+                    td.appendChild(notesContainer);
+
+                    tr.appendChild(td);
+                }
+                board.appendChild(tr);
+            }
+            // Initialize all candidates
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    renderCandidates(r, c);
+                }
+            }
+        }
+
+        function updateNumpad() {
+            const counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                    if (input && input.value) {
+                        const num = parseInt(input.value);
+                        if (num >= 1 && num <= 9) counts[num]++;
+                    }
+                }
+            }
+            for (let n = 1; n <= 9; n++) {
+                const btn = document.querySelector(`.numpad-btn[data-num="${n}"]`);
+                if (btn) {
+                    if (counts[n] >= 9) {
+                        btn.classList.add('completed');
+                        btn.disabled = true;
+                    } else {
+                        btn.classList.remove('completed');
+                        btn.disabled = false;
+                    }
+                }
+            }
+        }
+
+        function buildNumpad() {
+            const numpad = document.getElementById('numpad');
+            numpad.innerHTML = '';
+            for (let n = 1; n <= 9; n++) {
+                const btn = document.createElement('button');
+                btn.className = 'numpad-btn';
+                btn.dataset.num = n;
+                btn.textContent = n;
+                btn.addEventListener('click', (e) => {
+                    if (selectedCell) {
+                        const r = parseInt(selectedCell.dataset.row);
+                        const c = parseInt(selectedCell.dataset.col);
+                        if (notesMode || e.shiftKey) {
+                            toggleCandidate(r, c, n);
+                        } else {
+                            selectedCell.value = n;
+                            cellCandidates[`${r}-${c}`] = undefined;
+                            renderCandidates(r, c);
+                            selectCell(selectedCell);
+                            updateNumpad();
+                            checkWin();
+                        }
+                    }
+                });
+                numpad.appendChild(btn);
+            }
+            updateNumpad();
+        }
+
+        function handleInput(e, input, r, c) {
+            const val = input.value.replace(/[^1-9]/g, '');
+            input.value = val ? val[val.length - 1] : '';
+            if (!notesMode) {
+                // Clear candidates for this cell when a value is entered
+                if (input.value) {
+                    cellCandidates[`${r}-${c}`] = undefined;
+                    renderCandidates(r, c);
+                }
+                selectCell(input);
+                updateNumpad();
+                checkWin();
+            }
+        }
+
+        function handleKeydown(e, r, c) {
+            const currentInput = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+            const isGivenCell = currentInput && currentInput.classList.contains('given');
+
+            if (notesMode || e.shiftKey) {
+                const digitMatch = e.code.match(/^(?:Digit|Numpad)([1-9])$/);
+                if (digitMatch && !isGivenCell) {
+                    e.preventDefault();
+                    toggleCandidate(r, c, parseInt(digitMatch[1]));
+                    return;
+                }
+            }
+            const moves = {
+                ArrowUp:    [-1, 0],
+                ArrowDown:  [ 1, 0],
+                ArrowLeft:  [ 0,-1],
+                ArrowRight: [ 0, 1],
+            };
+            if (moves[e.key]) {
+                e.preventDefault();
+                const [dr, dc] = moves[e.key];
+                const nr = r + dr;
+                const nc = c + dc;
+
+                // Move one cell at a time, including filled and given cells.
+                if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
+                    const target = document.querySelector(`input[data-row="${nr}"][data-col="${nc}"]`);
+                    if (target) {
+                        target.focus();
+                        return;
+                    }
+                }
+            }
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                if (isGivenCell) {
+                    e.preventDefault();
+                    return;
+                }
+                const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                if (notesMode || e.shiftKey) {
+                    cellCandidates[`${r}-${c}`] = undefined;
+                    renderCandidates(r, c);
+                } else {
+                    input.value = '';
+                    input.classList.remove('error', 'correct');
+                    selectCell(input);
+                    updateNumpad();
+                }
+            }
+        }
+
+        // ── Candidate mode (Shift key) ──────────────────────────────────────
+        function setNotesMode(enabled) {
+            notesMode = enabled;
+            if (notesMode) {
+                document.getElementById('message').textContent = '✏️ Candidate mode - Click 1-9 to add candidates';
+                document.getElementById('message').style.color = '#7c3aed';
+            } else {
+                document.getElementById('message').textContent = '';
+            }
+        }
+
+        function toggleCandidate(r, c, num) {
+            const key = `${r}-${c}`;
+            if (!cellCandidates[key]) cellCandidates[key] = new Set();
+            if (cellCandidates[key].has(num)) {
+                cellCandidates[key].delete(num);
+            } else {
+                cellCandidates[key].add(num);
+            }
+            renderCandidates(r, c);
+        }
+
+        function openNotes(r, c) {
+            const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+            if (!input || input.value || input.classList.contains('given')) return;
+        }
+
+        function renderCandidates(r, c) {
+            const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+            if (!input) return;
+            const td = input.parentElement;
+            const container = td.querySelector('.notes-container');
+            if (!container) return;
+            
+            // Hide candidates if cell has a main number
+            if (input.value) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            // Show candidates container
+            container.style.display = 'grid';
+            const candidates = cellCandidates[`${r}-${c}`] || new Set();
+            const candidateDivs = container.querySelectorAll('.candidate');
+            for (let i = 1; i <= 9; i++) {
+                const candDiv = candidateDivs[i - 1];
+                if (candDiv) {
+                    candDiv.textContent = candidates.has(i) ? i : '';
+                }
+            }
+        }
+
+        function validateCell(input, r, c) {
+            const val = parseInt(input.value);
+            input.classList.remove('error', 'correct');
+            if (!input.value) return;
+            if (val === currentPuzzle.solution[r][c]) {
+                input.classList.add('correct');
+            } else {
+                input.classList.add('error');
+            }
+        }
+
+        function checkBoard() {
+            let allFilled = true;
+            let allCorrect = true;
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                    if (!input) continue;
+                    if (input.classList.contains('given')) continue;
+                    const val = parseInt(input.value);
+                    if (!input.value) { allFilled = false; allCorrect = false; continue; }
+                    if (val !== currentPuzzle.solution[r][c]) { allCorrect = false; }
+                    validateCell(input, r, c);
+                }
+            }
+            const msg = document.getElementById('message');
+            if (!allFilled) {
+                msg.textContent = 'Keep going — not done yet! 🌟';
+                msg.style.color = '#2a7a4a';
+            } else if (allCorrect) {
+                msg.textContent = '🎉 You solved it! Amazing! 🎉';
+                msg.style.color = '#10b981';
+            } else {
+                msg.textContent = 'Some answers are wrong — check the red cells! ❌';
+                msg.style.color = '#ef4444';
+            }
+        }
+
+        function giveHint() {
+            const empties = [];
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                    if (!input || input.classList.contains('given')) continue;
+                    const val = parseInt(input.value);
+                    if (!input.value || val !== currentPuzzle.solution[r][c]) {
+                        empties.push({ input, r, c });
+                    }
+                }
+            }
+            if (empties.length === 0) {
+                document.getElementById('message').textContent = 'The puzzle is already complete! 🌟';
+                return;
+            }
+            const pick = empties[Math.floor(Math.random() * empties.length)];
+            pick.input.value = currentPuzzle.solution[pick.r][pick.c];
+            pick.input.classList.remove('error');
+            pick.input.classList.add('correct');
+            hintUsed = true;
+            document.getElementById('message').textContent = '💡 Hint used! (score won\'t be saved)';
+            document.getElementById('message').style.color = '#92400e';
+            updateNumpad();
+            checkWin();
+        }
+
+        function showCompletionDropdown(text) {
+            const dropdown = document.getElementById('completionDropdown');
+            if (!dropdown) return;
+            dropdown.textContent = text;
+            dropdown.classList.add('open');
+            clearTimeout(dropdownTimeout);
+            dropdownTimeout = setTimeout(() => {
+                dropdown.classList.remove('open');
+            }, 2600);
+        }
+
+        function fireSudokuConfetti() {
+            if (typeof confetti !== 'function') return;
+            const sprinkle = confetti.shapeFromPath({ path: 'M-8,-2 L8,-2 L8,2 L-8,2 Z' });
+            const emojiShape = confetti.shapeFromText({ text: '🍦', scalar: 400 });
+            const colors = ['#e87dd8', '#a78bfa', '#6ee7b7', '#f472b6', '#818cf8', '#fb923c'];
+
+            confetti({
+                particleCount: 300,
+                spread: 160,
+                origin: { y: 0.4 },
+                shapes: [sprinkle, emojiShape],
+                colors,
+                scalar: 3.5,
+                startVelocity: 55,
+                ticks: 200,
+            });
+            setTimeout(() => confetti({
+                particleCount: 150,
+                spread: 120,
+                origin: { x: 0.1, y: 0.6 },
+                shapes: [sprinkle, emojiShape],
+                colors,
+                scalar: 3,
+            }), 200);
+            setTimeout(() => confetti({
+                particleCount: 150,
+                spread: 120,
+                origin: { x: 0.9, y: 0.6 },
+                shapes: [sprinkle, emojiShape],
+                colors,
+                scalar: 3,
+            }), 200);
+        }
+
+        function checkWin() {
+            if (!currentPuzzle) return;
+
+            let allFilled = true;
+            let allCorrect = true;
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                    if (!input) continue;
+                    if (input.classList.contains('given')) continue;
+                    if (!input.value) {
+                        allFilled = false;
+                        allCorrect = false;
+                        continue;
+                    }
+                    if (parseInt(input.value) !== currentPuzzle.solution[r][c]) {
+                        allCorrect = false;
+                    }
+                }
+            }
+
+            if (allFilled && !allCorrect) {
+                if (!hasShownIncorrectDropdown) {
+                    showCompletionDropdown('Board is full, but some answers are incorrect. Keep going!');
+                    hasShownIncorrectDropdown = true;
+                }
+                return;
+            }
+
+            if (!allFilled) {
+                hasShownIncorrectDropdown = false;
+                return;
+            }
+
+            if (!allCorrect || hasWonPuzzle) return;
+
+            hasWonPuzzle = true;
+            stopTimer();
+            document.getElementById('message').textContent = '🎉 Puzzle Solved! You did it! 🎉';
+            document.getElementById('message').style.color = '#10b981';
+            fireSudokuConfetti();
+            if (!hintUsed) {
+                const category = isDailyMode ? 'daily' : currentDifficulty;
+                pendingScore = { category, seconds: elapsedSeconds };
+                const m = String(Math.floor(elapsedSeconds / 60)).padStart(2,'0');
+                const s = String(elapsedSeconds % 60).padStart(2,'0');
+                let promptText = `You finished in ${m}:${s}`;
+                if (isDailyMode) {
+                    promptText += isDailyReplay ? ' (Replay)' : ' (Daily Challenge!)';
+                }
+                promptText += '. Spin up to 3 times and save your random name:';
+                document.getElementById('namePromptTime').textContent = promptText;
+                resetNameSpinner();
+                document.getElementById('nameOverlay').classList.add('open');
+                setTimeout(() => {
+                    const btn = document.getElementById('spinNameBtn');
+                    if (btn) btn.focus();
+                }, 100);
+            }
+        }
+
+        // ── Leaderboard (localStorage) ─────────────────────────────────────────
+        const LB_KEY = 'sudoku_leaderboard_v1';
+
+        function loadLeaderboard() {
+            try { return JSON.parse(localStorage.getItem(LB_KEY)) || {}; }
+            catch { return {}; }
+        }
+
+        function saveLeaderboard(data) {
+            localStorage.setItem(LB_KEY, JSON.stringify(data));
+        }
+
+        function pickRandom(list) {
+            return list[Math.floor(Math.random() * list.length)];
+        }
+
+        function updateSpinnerUi() {
+            const spinner = document.getElementById('nameSpinner');
+            const meta = document.getElementById('nameSpinnerMeta');
+            const spinBtn = document.getElementById('spinNameBtn');
+            const saveBtn = document.querySelector('.name-submit');
+            if (!spinner || !meta || !spinBtn || !saveBtn) return;
+
+            spinner.textContent = pendingSpinnerName || 'Press Spin to generate your name!';
+            if (pendingSpinnerName) {
+                meta.textContent = spinnerTriesLeft > 0
+                    ? `${spinnerTriesLeft} spin${spinnerTriesLeft === 1 ? '' : 's'} left - spin again or save this one`
+                    : 'No spins left - save this name!';
+            } else {
+                meta.textContent = `${spinnerTriesLeft} spins left`;
+            }
+
+            spinBtn.disabled = spinnerTriesLeft <= 0;
+            saveBtn.disabled = !pendingSpinnerName;
+        }
+
+        function resetNameSpinner() {
+            pendingSpinnerName = '';
+            spinnerTriesLeft = 3;
+            updateSpinnerUi();
+        }
+
+        function spinName() {
+            if (spinnerTriesLeft <= 0) return;
+            spinnerTriesLeft--;
+            pendingSpinnerName = `${pickRandom(SPINNER_ADJECTIVES)} ${pickRandom(SPINNER_ANIMALS)}`;
+            updateSpinnerUi();
+        }
+
+        function clearLegacyLeaderboardNames() {
+            const cleanupKey = 'sudoku_lb_cleanup_2026_07_16_v2';
+            if (localStorage.getItem(cleanupKey) === 'done') return;
+
+            const banned = new Set(['alexandria', 'katie', 'peppy walrus']);
+            const data = loadLeaderboard();
+            let changed = false;
+
+            Object.keys(data).forEach((category) => {
+                if (!Array.isArray(data[category])) return;
+                const filtered = data[category].filter((entry) => {
+                    const n = (entry && entry.name ? String(entry.name) : '').trim().toLowerCase();
+                    return !banned.has(n);
+                });
+                if (filtered.length !== data[category].length) {
+                    data[category] = filtered;
+                    changed = true;
+                }
+            });
+
+            if (changed) saveLeaderboard(data);
+            localStorage.setItem(cleanupKey, 'done');
+        }
+
+        function addScore(category, name, seconds) {
+            const data = loadLeaderboard();
+            if (!data[category]) data[category] = [];
+            data[category].push({ name, seconds, date: getTodayKey() });
+            data[category].sort((a, b) => a.seconds - b.seconds);
+            data[category] = data[category].slice(0, 10);
+            saveLeaderboard(data);
+        }
+
+        function submitScore() {
+            if (!pendingSpinnerName) {
+                updateSpinnerUi();
+                return;
+            }
+            if (pendingScore) {
+                addScore(pendingScore.category, pendingSpinnerName, pendingScore.seconds);
+                if (isDailyMode && !isDailyReplay) {
+                    setDailyStatus(true);
+                    const btn = document.getElementById('btn-daily');
+                    if (btn) btn.textContent = '🔁 Replaying Today\'s Challenge';
+                }
+                pendingScore = null;
+                pendingSpinnerName = '';
+                renderSidebarLeaderboard();
+            }
+            document.getElementById('nameOverlay').classList.remove('open');
+        }
+
+        function formatTime(seconds) {
+            const m = String(Math.floor(seconds / 60)).padStart(2,'0');
+            const s = String(seconds % 60).padStart(2,'0');
+            return `${m}:${s}`;
+        }
+
+        function renderSidebarLeaderboard() {
+            const data = loadLeaderboard();
+            const entries = data['daily'] || [];
+            const medals = ['🥇','🥈','🥉'];
+            const content = document.getElementById('lbSidebarContent');
+            if (!content) return;
+            if (entries.length === 0) {
+                content.innerHTML = '<div class="lb-empty">No daily scores yet — be the first! 🌟</div>';
+                return;
+            }
+            const rows = entries.map((e, i) =>
+                `<tr><td>${medals[i] || (i+1)}</td><td>${escHtml(e.name)}</td><td>${formatTime(e.seconds)}</td><td style="font-size:12px;color:#9ca3af">${e.date}</td></tr>`
+            ).join('');
+            content.innerHTML = `<table class="lb-table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+
+        function escHtml(str) {
+            return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        // ── Page initialization ───────────────────────────────────────────────
+        function initPage() {
+            clearLegacyLeaderboardNames();
+            const btn = document.getElementById('btn-daily');
+            if (btn) {
+                if (isDailyCompletedToday()) {
+                    btn.textContent = '🔁 Replaying Today\'s Challenge';
+                } else {
+                    btn.textContent = '⭐ Daily Challenge';
+                }
+            }
+            renderSidebarLeaderboard();
+        }
+
+        // ── Shift key for candidate mode ─────────────────────────────────────
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') {
+                setNotesMode(true);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') {
+                setNotesMode(false);
+            }
+        });
+
+        // Allow Enter in overlay: spin first if needed, otherwise save
+        document.getElementById('nameOverlay').addEventListener('keydown', e => {
+            if (e.key !== 'Enter') return;
+            if (!document.getElementById('nameOverlay').classList.contains('open')) return;
+            e.preventDefault();
+            if (!pendingSpinnerName && spinnerTriesLeft > 0) {
+                spinName();
+                return;
+            }
+            submitScore();
+        });
+
+        // Start immediately
+        initPage();
+        newGame();
+    </script>
+</body>
+</html>

@@ -1,13 +1,27 @@
 .square {
-    height: 40px;
-    width: 40px;
-    background-color: papayawhip;
+    height: 160px;
+    width: 160px;
+    background-color: #d8f3dc;
+    border: 3px solid #b7d5c8;
+    border-radius: 12px;
+    box-shadow: 0 20px 20px rgba(0,0,0,0.15);
+    font-size: 88px;
 }
 
 .website {
-    background-color: bisque;
+    background: #fef5c9;
+    min-height: 100vh;
+    font-family: 'Chewy', cursive;
+    color: #7a6a97;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+    background-image: url(./Public/icing3.webp);
+    background-size: cover;
+    background-position: center; 
 }
-
 
   
 .row1 {
@@ -24,3 +38,138 @@
     display: flex;
     justify-content: center;
 }
+
+.new-game {
+    display: block;
+    margin: 42px auto 0;
+    padding: 24px 62px;
+    background-color: #c9b8f5;
+    border: none;
+    border-radius: 12px;
+    font-size: 42px;
+    font-family: 'Chewy', cursive;
+    cursor: pointer;
+    color: #7a6a97;
+}
+
+.new-game:hover {
+    background-color: #b5a0ef;
+}
+
+.party-banner {
+    font-size: 42px;
+    padding: 12px;
+    letter-spacing: 8px;
+    animation: wave 2s ease-in-out infinite;
+}
+
+h1 {
+    font-size: 120px;
+    margin: 0 0 20px 0;
+    position: relative;
+    z-index: 2;
+}
+
+.wordle-btn {
+    position: absolute;
+    top: 240px;
+    right: 80px;
+    z-index: 20;
+    background-color: #b0d4f1;
+    color: #2d5aa3;
+    border: none;
+    border-radius: 12px;
+    padding: 28px 56px;
+    font-size: 54px;
+    font-family: 'Chewy', cursive;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.wordle-btn:hover {
+    background-color: #7db8e8;
+}
+
+.sudoku-btn {
+    position: absolute;
+    top: 400px;
+    right: 80px;
+    z-index: 20;
+    background-color: #b8f5c9;
+    color: #2a7a4a;
+    border: none;
+    border-radius: 12px;
+    padding: 28px 56px;
+    font-size: 54px;
+    font-family: 'Chewy', cursive;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.sudoku-btn:hover {
+    background-color: #7de8a0;
+}
+
+.status {
+    font-size: 46px;
+    margin-bottom: 24px;
+}
+
+@keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.1); }
+}
+
+@keyframes titleWave {
+    0% { transform: translateY(0) rotateZ(-1deg); }
+    25% { transform: translateY(-8px) rotateZ(1.5deg); }
+    50% { transform: translateY(0) rotateZ(-1deg); }
+    75% { transform: translateY(-8px) rotateZ(1.5deg); }
+    100% { transform: translateY(0) rotateZ(-1deg); }
+}
+
+.wave-letter {
+    display: inline-block;
+    animation: titleWave 2.5s ease-in-out infinite;
+}
+
+.gameContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 110px;
+    margin: 40px 0;
+}
+
+
+.score-panel {
+    background-color: #f3d6f5;
+    border: 3px solid #d4aedc;
+    border-radius: 20px;
+    padding: 42px 48px;
+    text-align: center;
+    font-family: 'Chewy', cursive;
+    color: #7a6a97;
+}
+
+.score-label {
+    font-size: 46px;
+}
+
+.score-number {
+    font-size: 114px;
+    line-height: 1;
+}
+
+@keyframes popIn {
+    0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+    60%  { transform: scale(1.3) rotate(8deg); opacity: 1; }
+    80%  { transform: scale(0.9) rotate(-4deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.squareItem {
+    display: inline-block;
+    animation: popIn 0.35s ease-out;
+}
+
